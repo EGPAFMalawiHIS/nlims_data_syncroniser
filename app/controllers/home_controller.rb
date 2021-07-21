@@ -57,8 +57,6 @@ class HomeController < ApplicationController
         host_address = params[:hostaddress]
         couch_username = params[:couchusername]
         couch_password = params[:couchpassword]
-        # couch_port = params[:couchport]
-        # ip_address = params[:ipaddress]host_address
 
         new_site = Site.new(name: site, site_code: code, district: district, region: region, description: description, y: latitude, x: longitude, application_port: application_port, host_address: host_address, couch_username: couch_username, couch_password: couch_password, sync_status: false, enabled: false)
         new_site.save
