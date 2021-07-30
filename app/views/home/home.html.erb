@@ -387,6 +387,7 @@
     }
 
     document.querySelector("#save-new-site").addEventListener("click", function(e){
+        e.preventDefault();
         let siteName = document.getElementById("siteName").value
         let siteCode = document.getElementById("siteCode").value
         let siteDistrict = document.getElementById("siteDistrict").value
@@ -398,10 +399,8 @@
         let siteHostAddress = document.getElementById("host_address").value
         let couchUsername = document.getElementById("couchUsername").value;
         let couchPassword = document.getElementById("couchPassword").value;
-        let couchPort = document.getElementById("couchPort").value;
-        let ipAddress = document.getElementById("IPAdress").value;
 
-        let url = `/save_new_site?site=${siteName}&code=${siteCode}&district=${siteDistrict}&region=${siteRegion}&description=${siteDescription}&latitude=${siteLatitude}&longitude=${siteLongitude}&applicationport=${siteApplicationPort}&hostaddress=${siteHostAddress}&couchusername=${couchUsername}&couchpassword=${couchPassword}&couchport=${couchPort}&ipaddress=${ipAddress}`
+        let url = `/save_new_site?site=${siteName}&code=${siteCode}&district=${siteDistrict}&region=${siteRegion}&description=${siteDescription}&latitude=${siteLatitude}&longitude=${siteLongitude}&applicationport=${siteApplicationPort}&hostaddress=${siteHostAddress}&couchusername=${couchUsername}&couchpassword=${couchPassword}`
         var info = document.getElementById("info");
                     info.style.color = "green";
                     info.innerHTML = "site saved";
@@ -414,6 +413,8 @@
                     var info = document.getElementById("info");
                     info.style.color = "green";
                     info.innerHTML = "site saved";
+                    console.log(url);
+                    console.log(window.location)
                 },
                 error: function(err)
                 {
