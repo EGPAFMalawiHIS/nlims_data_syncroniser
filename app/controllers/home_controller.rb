@@ -10,10 +10,8 @@ class HomeController < ApplicationController
             res = SiteSyncFrequency.find_by_sql("SELECT * FROM site_sync_frequencies WHERE site='#{site_id}'").last
             if res
              @last.push(st.id => res.updated_at)
-            end
-            
+            end 
         end
-       
     end
 
     def get_site_details
@@ -47,4 +45,31 @@ class HomeController < ApplicationController
         end
     end
 
+    def save_new_site
+        site = params[:site]
+        code = params[:code]
+        district = params[:district]
+        region = params[:region]
+        description = params[:description]
+        latitude = params[:latitude]
+        longitude = params[:longitude]
+        application_port = params[:applicationport]
+        host_address = params[:hostaddress]
+        couch_username = params[:couchusername]
+        couch_password = params[:couchpassword]
+
+        new_site = Site.new(name: site, site_code: code, district: district, region: region, description: description, y: latitude, x: longitude, application_port: application_port, host_address: host_address, couch_username: couch_username, couch_password: couch_password, sync_status: false, enabled: false)
+        new_site.save
+        render plain: true and return
+    end
+
+
+    def get_sites
+        sites = Site.where(:enabled => false)
+        site_names = []
+        sites.each do |s|
+            site_names.push([s.name, s.id])
+        end
+        render plain: JSON.generate({data: site_names}) and return
+    end
 end

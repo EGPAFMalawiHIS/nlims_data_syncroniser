@@ -32,6 +32,18 @@
         border: 1px solid #ccc;
         border-top: none;
     }
+    .float-right{
+        float: right!important;
+        margin:auto!important;
+        background-color:rgb(128, 216, 128)!important;
+        color:white!important;
+    }
+    button.float-right{
+        padding:7px!important;
+        margin-top:6px!important;
+        margin-right:5px!important;
+        border-radius:3px;
+    }
 
 </style>
 
@@ -86,13 +98,19 @@
         <div class="tab">
             <button class="tablinks" onclick="openTab(event, 'add')">Add Site</button>
             <button class="tablinks" onclick="openTab(event, 'edit')">Edit Site</button>
+            <button class="tablinks float-right" onclick="openTab(event, 'new-site')">New Site</button>
             <span style="float:right" id="info"> </span>
         </div>
         
         <div id="add" class="tabcontent">
             
             <div>
-                <form class="form">
+                <form class="form" method="POST">
+                    <!-- <div class="form-group">
+                        <input class="form-control" list="sitesCenters" id="site" name="site_selected" placeholder="Sites"/>
+                        <datalist id="sitesCenters">
+                        </datalist>
+                    </div> -->
                     <div class="form-group">
                             <label>Site name: </label>
                             <select id="site" class="form-control" name="site_selected"> 
@@ -136,7 +154,7 @@
         <div id="edit" class="tabcontent">
           
             <div>
-                <form class="form">
+                <form class="form" method="POST">
                     <div class="form-group">
                             <label>Site name: </label>
                             <select id="sitee" class="form-control" name="site_selected"> 
@@ -175,6 +193,60 @@
                 </form>
             </div>
         </div>
+
+        <div id="new-site" class="tabcontent">
+          
+        <div>
+            <form class="form" method="POST">
+                <div class="form-group">
+                    <label>Site name:</label>
+                    <input id="siteName" type="text" class="form-control" name="site_name">
+                </div>
+                <div class="form-group">
+                    <label>Site code:</label>
+                    <input id="siteCode" type="text" class="form-control" name="site_code">
+                </div>
+                <div class="form-group">
+                    <label>Site district:</label>
+                    <input id="siteDistrict" type="text" class="form-control" name="site_district">
+                </div>
+                <div class="form-group">
+                    <label>Site region:</label>
+                    <input id="siteRegion" type="text" class="form-control" name="site_region">
+                </div>
+                <div class="form-group">
+                    <label>Site description:</label>
+                    <input id="siteDescription" type="text" class="form-control" name="site_description">
+                </div>
+                <div class="form-group">
+                    <label>Site Latitude:</label>
+                    <input id="siteLatitude" type="text" class="form-control" name="site_latitude">
+                </div>
+                <div class="form-group">
+                    <label>Site Longitude:</label>
+                    <input id="siteLongitude" type="text" class="form-control" name="site_longitude">
+                </div>
+                <div class="form-group">
+                    <label>Application port</label>
+                    <input id="application_port" type="text" class="form-control" name="application_port">
+                </div>
+                <div class="form-group">
+                    <label>Host Address</label>
+                    <input id="host_address" type="text" class="form-control" name="host_address">
+                </div>
+                <div class="form-group">
+                    <label>Couch-username</label>
+                    <input id="couchUsername" type="text" class="form-control" name="couch_username">
+                </div>
+                <div class="form-group">
+                    <label>Couch-password</label>
+                    <input id="couchPassword" type="text" class="form-control" name="couch_password">
+                </div>
+                <button id="save-new-site" class="btn btn-success"> save </button>
+            </form>
+            
+        </div>
+    </div>
         
     </div>
 
@@ -183,6 +255,32 @@
 
 
 <script type="text/javascript">
+    
+   
+    function sitesCentres(sites) {
+        if (Array.isArray(sites)) {
+            sites.forEach(function(site) {
+                container = $('datalist');
+                container.append(`<option class="tests-options" value="${site[0]}" id="${site[1]}"></option>`) 
+            })
+        }
+    }
+    function getSitesCenters(){
+        uri = '/get_sites'
+        jQuery.ajax({
+            url: uri,
+            type: "Post",
+            dataType: "json",
+            success: function(res) {
+                let response = res.data;
+                sitesCentres(response)
+            },
+            error: function(err){
+                console.log(err)
+            }
+        })
+    }
+    getSitesCenters()
 
     function disable()
     {
@@ -267,8 +365,9 @@
         var site_code = document.getElementById("site_code").value;
         var c_username = document.getElementById("couch_username").value;
         var c_password = document.getElementById("couch_password").value;
+        
+        var url = "/edit_site?site=" + site + "&ip=" + ip +"&port=" + port + "&site_code=" + site_code + "&username=" + c_username + "&password=" + c_password;
 
-        var url = "/edit_site?site=" + site + "&ip=" + ip + "&port=" + port + "&site_code=" + site_code + "&username=" + c_username + "&password=" + c_password;
         jQuery.ajax({
                 async: false,
                 type: "post",
@@ -287,6 +386,40 @@
         });
     }
 
+    document.querySelector("#save-new-site").addEventListener("click", function(e){
+        let siteName = document.getElementById("siteName").value
+        let siteCode = document.getElementById("siteCode").value
+        let siteDistrict = document.getElementById("siteDistrict").value
+        let siteRegion = document.getElementById("siteRegion").value
+        let siteDescription = document.getElementById("siteDescription").value
+        let siteLatitude = document.getElementById("siteLatitude").value
+        let siteLongitude = document.getElementById("siteLongitude").value
+        let siteApplicationPort = document.getElementById("application_port").value
+        let siteHostAddress = document.getElementById("host_address").value
+        let couchUsername = document.getElementById("couchUsername").value;
+        let couchPassword = document.getElementById("couchPassword").value;
+
+        let url = `/save_new_site?site=${siteName}&code=${siteCode}&district=${siteDistrict}&region=${siteRegion}&description=${siteDescription}&latitude=${siteLatitude}&longitude=${siteLongitude}&applicationport=${siteApplicationPort}&hostaddress=${siteHostAddress}&couchusername=${couchUsername}&couchpassword=${couchPassword}`
+        var info = document.getElementById("info");
+                    info.style.color = "green";
+                    info.innerHTML = "site saved";
+        jQuery.ajax({
+                async: false,
+                type: "post",
+                url: url,
+                success: function(res)
+                {                
+                    var info = document.getElementById("info");
+                    info.style.color = "green";
+                    info.innerHTML = "site saved";
+                },
+                error: function(err)
+                {
+                    console.log(err);
+                }
+        });
+    })
+
 
     function openTab(evt, type) {
         var i, tabcontent, tablinks;
@@ -302,7 +435,7 @@
         evt.currentTarget.className += " active";
     }
 
-
+    
 
     var zoomlevel = 1;
     var currentSite = "";

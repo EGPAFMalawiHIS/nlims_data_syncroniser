@@ -62,7 +62,12 @@ puts "finished setting up data source, now setting up data destination"
 site_name = "Community Health Sciences Unit (CHSU)"
 site_code = "CHSU"
 
+<<<<<<< HEAD
 ip = "10.44.0.4"
+=======
+
+ip = "10.44.0.46"
+>>>>>>> f390d8b
 port = "5984"
 username = "admin"
 password = "root"
