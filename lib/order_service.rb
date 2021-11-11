@@ -18,11 +18,9 @@ module  OrderService
                                           phone_number: params[:patient][:phone_number],
                                           address: "",
                                           external_patient_number:  "" 
-                                          )
-                           
+                                          )                           
                   end
-
-                              
+                  
             who_order = {
                   :first_name => params[:who_order_test][:first_name],
                   :last_name => params[:who_order_test][:last_name],
@@ -413,8 +411,46 @@ module  OrderService
 
     end
 
+    def self.check_data_anomalies(doc)
+      specimen_type = doc['doc']['sample_type']
+      tests = doc['doc']['tests']
+      status = true
+      res = ""
+      res = SpecimenType.find_by_sql("SELECT * FROM specimen_types WHERE name ='#{specimen_type}'")
+      if res.blank?
+        DataAnomaly.create(
+          :data_type => "specimen type",
+          :data => specimen_type,
+          :site_name => doc['doc']['sending_facility'],
+          :tracking_number => doc['doc']["tracking_number"],
+          :couch_id => doc['doc']["_id"],
+          :date_created => Time.new.strftime("%Y%m%d%H%M%S"),
+          :status => "not-resolved"
+        )
+        status = false
+      end
+      tests.each do |test_type|
+	test_type = "Cross-Match" if test_type == "Cross Match"
+      res = TestType.find_by_sql("SELECT * FROM test_types WHERE name ='#{test_type}'")
+      	if res.blank?
+       		 DataAnomaly.create(
+         	 :data_type => "test type",
+         	 :data => test_type,
+          	 :site_name => doc['doc']['sending_facility'],
+          	 :tracking_number => doc['doc']["tracking_number"],
+          	 :couch_id => doc['doc']["_id"],
+          	 :date_created => Time.new.strftime("%Y%m%d%H%M%S"),
+          	 :status => "not-resolved"
+        	)
+            status = false
+         end
+      end
+
+      return status
+    end
+
     def self.create_order(document,tracking_number,couch_id)
-    
+     
             document = document['doc']            
             patient_id = document['patient']['id']
             patient_f_name = document['patient']['first_name']
@@ -432,11 +468,16 @@ module  OrderService
             sample_type = document['sample_type']
             sending_facility = document['sending_facility']
 
-            who_order_id = document['who_order_test']['id']
-            who_order_f_name = document['who_order_test']['first_name']
-            who_order_l_name = document['who_order_test']['last_name']
-            who_order_phone_number = document['who_order_test']['phone_number']
+            return [false,'its an order request'] if sample_type.blank?
+            return [false,'its an order request'] if sample_type == "not_assigned"
+	    return [false,'its an order request'] if sample_type == "not_specified"
+
+            who_order_id = document['who_order_test']['id'] rescue ""
+            who_order_f_name = document['who_order_test']['first_name'] rescue ""
+            who_order_l_name = document['who_order_test']['last_name'] rescue ""
+            who_order_phone_number = document['who_order_test']['phone_number'] rescue ""
             
+
             ward_id = OrderService.get_ward_id(ward)
             sample_type_id = OrderService.get_specimen_type_id(sample_type)
             sample_status_id = OrderService.get_specimen_status_id(sample_status)
@@ -476,7 +517,13 @@ module  OrderService
                                           )                           
                   end
             p_id = patient_obj.id
-            tests.each do |tst_name,tst_value|              
+            tests.each do |tst_name,tst_value|    
+	      tst_name = "ABO Blood Grouping" if tst_name == "Abo Blood Grouping"
+	      tst_name = "Cross-match" if tst_name == "Cross Match"
+	      tst_name = "CrAg" if tst_name == "Cr Ag"  
+	      tst_name = "Cryptococcus Antigen Test" if tst_name == "Cryptococcal Antigen"
+              tst_name = "FBC" if tst_name == "Fbs"
+	      tst_name = "Creatine" if tst_name =="Creat"
               test_id = OrderService.get_test_type_id(tst_name)
               test_status = tst_value[tst_value.keys[tst_value.keys.count - 1]]['status']
               test_status_id = OrderService.get_status_id(test_status)
@@ -517,7 +564,9 @@ module  OrderService
               
               unless test_results.blank?
                 if test_results['results'].keys.count > 0
-                  test_results['results'].keys.each do |ms|                  
+                  test_results['results'].keys.each do |ms|    
+		    ms = "Bilirubin Total(TBIL-VOX)" if ms == "TBIL-VOX"
+                    ms = "Bilirubin Direct(DBIL-VOX)"  if ms == "DBIL-VOX"              
                     measur_id = OrderService.get_measure_id(ms)
                     rst = test_results['results'][ms]                              
                     TestResult.create(
@@ -525,7 +574,7 @@ module  OrderService
                             test_id: tst_obj.id,
                             result: rst['result_value'],	
                             device_name: '',						
-                            time_entered: '2018-09-21 04:38:02' # ms['date_result_given']
+                            time_entered: '' # ms['date_result_given']
                     )
                   end
                 end   
@@ -601,6 +650,7 @@ module  OrderService
 
     def self.update_order(document,tracking_number)
             puts "migrating v2--------------------------------"
+            puts tracking_number
             document = document['doc']            
             patient_id = document['patient']['id']
             patient_f_name = document['patient']['first_name']
@@ -664,8 +714,10 @@ module  OrderService
            
             tests = document['test_statuses']
             
-            tests.each do |tst_name,tst_value|              
-              test_id = OrderService.get_test_type_id(tst_name)
+            tests.each do |tst_name,tst_value|  
+              tst_name = "Cross-match" if tst_name == "Cross Match"            
+              tst_name = "ABO Blood Grouping" if tst_name == "Abo Blood Grouping"
+	      test_id = OrderService.get_test_type_id(tst_name)
               test_status = tst_value[tst_value.keys[tst_value.keys.count - 1]]['status']
               test_status_id = OrderService.get_status_id(test_status)
               updated_by_id = tst_value[tst_value.keys[tst_value.keys.count - 1]]['updated_by']['id']
@@ -673,7 +725,19 @@ module  OrderService
               updated_by_last_name = tst_value[tst_value.keys[tst_value.keys.count - 1]]['updated_by']['last_name']
               updated_by_phone_number = tst_value[tst_value.keys[tst_value.keys.count - 1]]['updated_by']['phone_number']
               tst_obj =  Test.where(:specimen_id => sp.id, :test_type_id => test_id).first
-              Test.where(:specimen_id => sp.id, :test_type_id => test_id).update_all(
+              if tst_obj.blank? 
+		  tst_obj = Test.create(
+			  :specimen_id => sp.id,
+			  :test_type_id => test_id,
+			  :patient_id => p_id,
+			  :created_by => who_order_f_name + " " + who_order_l_name,
+                      	  :panel_id => '',
+        		  :time_created => date_created,
+	                  :test_status_id => test_status_id
+
+			)
+	      end
+		Test.where(:specimen_id => sp.id, :test_type_id => test_id).update_all(
                       :specimen_id => sp.id,
                       :test_type_id => test_id,
                       :patient_id => p_id,
@@ -682,10 +746,14 @@ module  OrderService
                       :time_created => date_created,
                       :test_status_id => test_status_id 
               )
-              
+             
               count = tst_value.keys.count
-              t_count = TestStatusTrail.find_by_sql("SELECT count(*) AS t_count FROM test_status_trails WHERE test_id='#{tst_obj.id}'")[0]['t_count']
-   
+puts tst_name
+              t_tst_id_ =  tst_obj.id
+              t_count = TestStatusTrail.find_by_sql("SELECT count(*) AS t_count FROM test_status_trails WHERE test_id='#{t_tst_id_}'")[0]["t_count"]
+
+              if !t_count.blank?
+                #t_count = t_count[0]['t_count']
               if ((count - t_count) == 1) && count > t_count
                 value = tst_value[tst_value.keys[count - 1 ]]
                 status = value['status']
@@ -725,6 +793,7 @@ module  OrderService
                     )
                     
                 end
+		end
               end
              
               test_results = document['test_results'][tst_name]
