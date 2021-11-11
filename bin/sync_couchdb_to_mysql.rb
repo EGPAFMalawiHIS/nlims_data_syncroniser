@@ -20,9 +20,10 @@
   
   docs.each do |document|
     puts "-------------------------"       
-    
+      
     tracking_number = document['doc']['tracking_number']
     puts tracking_number
+   #next if tracking_number.include?("XLLH")  
     ss = OrderService.check_order(tracking_number)
   
     next if !document['deleted'].blank?
