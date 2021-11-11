@@ -436,7 +436,8 @@ module  OrderService
             who_order_f_name = document['who_order_test']['first_name']
             who_order_l_name = document['who_order_test']['last_name']
             who_order_phone_number = document['who_order_test']['phone_number']
-            
+            return [false,'its an order request'] if sample_type.blank?
+	    return [false,'its an order request'] if sample_type == "not_assigned"
             ward_id = OrderService.get_ward_id(ward)
             sample_type_id = OrderService.get_specimen_type_id(sample_type)
             sample_status_id = OrderService.get_specimen_status_id(sample_status)
