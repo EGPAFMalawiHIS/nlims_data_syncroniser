@@ -387,7 +387,6 @@
     }
 
     document.querySelector("#save-new-site").addEventListener("click", function(e){
-        e.preventDefault();
         let siteName = document.getElementById("siteName").value
         let siteCode = document.getElementById("siteCode").value
         let siteDistrict = document.getElementById("siteDistrict").value
@@ -413,8 +412,6 @@
                     var info = document.getElementById("info");
                     info.style.color = "green";
                     info.innerHTML = "site saved";
-                    console.log(url);
-                    console.log(window.location)
                 },
                 error: function(err)
                 {
