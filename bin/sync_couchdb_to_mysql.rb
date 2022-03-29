@@ -21,10 +21,11 @@
   
   docs.each do |document|
     puts "-------------------------"       
-    
+      
     tracking_number = document['doc']['tracking_number']
-    puts tracking_number
-    #next if tracking_number.include?("XLLH")
+    puts tracking_number    
+ss = OrderService.check_order(tracking_number)
+  
     next if !document['deleted'].blank?
     couch_id =  document['doc']['_id']
     if OrderService.check_order(tracking_number) == true                 

@@ -518,6 +518,8 @@ module  OrderService
                   end
             p_id = patient_obj.id
             tests.each do |tst_name,tst_value|    
+	      tst_name = "ABO Blood Grouping" if tst_name == "Abo Blood Grouping"
+	      tst_name = "Cross-match" if tst_name == "Cross Match"
 	      tst_name = "CrAg" if tst_name == "Cr Ag"  
 	      tst_name = "Cryptococcus Antigen Test" if tst_name == "Cryptococcal Antigen"
               tst_name = "FBC" if tst_name == "Fbs"
@@ -572,7 +574,7 @@ module  OrderService
                             test_id: tst_obj.id,
                             result: rst['result_value'],	
                             device_name: '',						
-                            time_entered: '' # ms['date_result_given']
+                            time_entered: date_created # ms['date_result_given']
                     )
                   end
                 end   
@@ -714,7 +716,8 @@ module  OrderService
             
             tests.each do |tst_name,tst_value|  
               tst_name = "Cross-match" if tst_name == "Cross Match"            
-              test_id = OrderService.get_test_type_id(tst_name)
+              tst_name = "ABO Blood Grouping" if tst_name == "Abo Blood Grouping"
+	      test_id = OrderService.get_test_type_id(tst_name)
               test_status = tst_value[tst_value.keys[tst_value.keys.count - 1]]['status']
               test_status_id = OrderService.get_status_id(test_status)
               updated_by_id = tst_value[tst_value.keys[tst_value.keys.count - 1]]['updated_by']['id']
@@ -722,7 +725,19 @@ module  OrderService
               updated_by_last_name = tst_value[tst_value.keys[tst_value.keys.count - 1]]['updated_by']['last_name']
               updated_by_phone_number = tst_value[tst_value.keys[tst_value.keys.count - 1]]['updated_by']['phone_number']
               tst_obj =  Test.where(:specimen_id => sp.id, :test_type_id => test_id).first
-              Test.where(:specimen_id => sp.id, :test_type_id => test_id).update_all(
+              if tst_obj.blank? 
+		  tst_obj = Test.create(
+			  :specimen_id => sp.id,
+			  :test_type_id => test_id,
+			  :patient_id => p_id,
+			  :created_by => who_order_f_name + " " + who_order_l_name,
+                      	  :panel_id => '',
+        		  :time_created => date_created,
+	                  :test_status_id => test_status_id
+
+			)
+	      end
+		Test.where(:specimen_id => sp.id, :test_type_id => test_id).update_all(
                       :specimen_id => sp.id,
                       :test_type_id => test_id,
                       :patient_id => p_id,
@@ -794,7 +809,7 @@ puts tst_name
                               test_id: tst_obj.id,
                               result: rst['result_value'],	
                               device_name: '',						
-                              time_entered: rst['date_result_entered'] || test_results['date_result_entered']
+                              time_entered: rst['date_result_entered'] || test_results['date_result_entered'] || date_created
                         )  
                     else
                       TestResult.create(
@@ -802,7 +817,7 @@ puts tst_name
                               test_id: tst_obj.id,
                               result: rst['result_value'],	
                               device_name: '',						
-                              time_entered: rst['date_result_entered'] || test_results['date_result_entered']
+                              time_entered: rst['date_result_entered'] || test_results['date_result_entered'] || date_created
                         )                     
                     end
                   end
