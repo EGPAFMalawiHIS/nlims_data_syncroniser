@@ -477,6 +477,7 @@ module  OrderService
             who_order_l_name = document['who_order_test']['last_name'] rescue ""
             who_order_phone_number = document['who_order_test']['phone_number'] rescue ""
             
+
             ward_id = OrderService.get_ward_id(ward)
             sample_type_id = OrderService.get_specimen_type_id(sample_type)
             sample_status_id = OrderService.get_specimen_status_id(sample_status)
@@ -573,7 +574,7 @@ module  OrderService
                             test_id: tst_obj.id,
                             result: rst['result_value'],	
                             device_name: '',						
-                            time_entered: '' # ms['date_result_given']
+                            time_entered: date_created # ms['date_result_given']
                     )
                   end
                 end   
@@ -808,7 +809,7 @@ puts tst_name
                               test_id: tst_obj.id,
                               result: rst['result_value'],	
                               device_name: '',						
-                              time_entered: rst['date_result_entered'] || test_results['date_result_entered']
+                              time_entered: rst['date_result_entered'] || test_results['date_result_entered'] || date_created
                         )  
                     else
                       TestResult.create(
@@ -816,7 +817,7 @@ puts tst_name
                               test_id: tst_obj.id,
                               result: rst['result_value'],	
                               device_name: '',						
-                              time_entered: rst['date_result_entered'] || test_results['date_result_entered']
+                              time_entered: rst['date_result_entered'] || test_results['date_result_entered'] || date_created
                         )                     
                     end
                   end

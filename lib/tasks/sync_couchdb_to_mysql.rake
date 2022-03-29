@@ -24,18 +24,18 @@ namespace :nlims do
   res = JSON.parse(RestClient.get("#{protocol}://#{username}:#{password}@#{ip}:#{port}/#{db_name}/_changes?include_docs=true&limit=3000&since=#{seq}"))
   docs = res['results']
 
-
   docs.each do |document|
-    puts "-------------------------"
-    puts document['doc']['tracking_number'][1..3]
-
-    tracking_number = document['doc']['tracking_number']
-    puts tracking_number
-    document['doc']['order_location'] = "Queens Elizabeth Central Hospital" if document['doc']['order_location'] == "Queen Elizabeth Central Hospital"
+    puts "-------------------------"   
+ document['doc']['order_location'] = "Queens Elizabeth Central Hospital" if document['doc']['order_location'] == "Queen Elizabeth Central Hospital"
    #next if tracking_number.include?("XLLH")
+    puts document['seq']
     next if !document['deleted'].blank?
-    couch_id =  document['doc']['_id']
-    if document['doc']['tracking_number'][1..3] == site_conf['site_code'] || document['doc']['tracking_number'][1..4] == "CHSU"
+       #puts document
+        puts document['doc']['tracking_number'][1..3]
+         puts document['doc']['tracking_number']
+	tracking_number = document['doc']['tracking_number']
+	couch_id =  document['doc']['_id']
+    if document['doc']['tracking_number'][1..3] == site_conf['site_code'] || document['doc']['tracking_number'][1..4] == "CHSUs"
     	if OrderService.check_order(tracking_number) == true
         	if OrderService.check_data_anomalies(document) == true
         	   	OrderService.update_order(document,tracking_number)
@@ -91,7 +91,9 @@ namespace :nlims do
                     remote_address = "http://#{username}:#{password}@#{r_host}:#{r_port}/#{db_name}"                  
                 end
             end
-        
+        puts remote_address
+        puts local_address
+
             `curl -X POST http://#{l_host }:#{l_port}/_replicate -d '{"source":"#{local_address}","target":"#{remote_address}","create_target":  true, "continuous":true}' -H "Content-Type: application/json"`
             `curl -X POST http://#{r_host}:#{r_port}/_replicate -d '{"source":"#{remote_address}","target":"#{local_address}","create_target":  true, "continuous":true}' -H "Content-Type: application/json"`
          
