@@ -5,7 +5,7 @@ development: &development
   prefix: nlims
   suffix: repo_
   username: admin
-  password: password
+  password: root
 test:
   <<: *development
   suffix: test

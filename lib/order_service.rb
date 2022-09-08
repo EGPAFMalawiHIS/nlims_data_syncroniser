@@ -461,8 +461,12 @@ module  OrderService
 
             ward = document['order_location']
             district  = document['district']
-            date_created = document['date_created']
-            priority = document['priority']
+        puts document['date_created']
+puts "checking -date"    
+	date_created = document['date_created'].to_date.strftime("%Y%m%d%H%m") if !document['date_created'].blank? && document['date_created'] != "0000-00-00 00:00:00"
+            #raise date_created.inspect
+date_created = Time.now() if document['date_created'] == "0000-00-00 00:00:00"
+		priority = document['priority']
             receiving_facility = document['receiving_facility']
             sample_status = document['sample_status']
             sample_type = document['sample_type']
@@ -481,7 +485,13 @@ module  OrderService
             ward_id = OrderService.get_ward_id(ward)
             sample_type_id = OrderService.get_specimen_type_id(sample_type)
             sample_status_id = OrderService.get_specimen_status_id(sample_status)
-            
+            art_start_date = Time.now()
+	   arv_number = ""
+           art_regimen = ""
+
+	   art_regimen = document['art_regimen'] if !document['art_regimen'].blank?
+	   arv_number = document['arv_number'] if !document['art_regimen'].blank?
+           art_start_date  = document['art_start_date'] if !document['art_start_date'].blank?
           sp = Speciman.create(
                   :tracking_number => tracking_number,
                   :specimen_type_id =>  sample_type_id,
@@ -492,12 +502,14 @@ module  OrderService
                   :drawn_by_name =>  who_order_f_name + " " + who_order_l_name,
                   :drawn_by_phone_number => who_order_phone_number,
                   :target_lab => receiving_facility,
-                  :art_start_date => Time.now,
+                  :art_start_date => art_start_date,
                   :sending_facility => sending_facility,
                   :requested_by => "",
                   :ward_id => 1,
                   :district => district,
-                  :date_created => date_created
+                  :date_created => date_created,
+		  :art_regimen => art_regimen,
+                  :arv_number => arv_number
             )
      
             tests = document['test_statuses']
@@ -574,7 +586,7 @@ module  OrderService
                             test_id: tst_obj.id,
                             result: rst['result_value'],	
                             device_name: '',						
-                            time_entered: date_created # ms['date_result_given']
+                            time_entered: '' # ms['date_result_given']
                     )
                   end
                 end   
@@ -661,8 +673,12 @@ module  OrderService
 
             ward = document['order_location']
             district  = document['districy']
-            date_created = document['date_created']
-            priority = document['priority']
+            begin
+		date_created = document['date_created'].to_date.strftime("%Y%m%d%H%m") if !document['date_created'].blank?
+	    rescue ArgumentError
+		date_created = Time.new.strftime("%Y%m%d%H%M%S")
+	    end 
+		 priority = document['priority']
             receiving_facility = document['receiving_facility']
             sample_status = document['sample_status']
             sample_type = document['sample_type']
@@ -713,13 +729,15 @@ module  OrderService
             p_id = patient_obj.id
            
             tests = document['test_statuses']
-            
+            #test_results = document['test_results'][tst_name]
             tests.each do |tst_name,tst_value|  
-              tst_name = "Cross-match" if tst_name == "Cross Match"            
+              test_results = document['test_results'][tst_name]
+	      tst_name = "Cross-match" if tst_name == "Cross Match"            
               tst_name = "ABO Blood Grouping" if tst_name == "Abo Blood Grouping"
 	      test_id = OrderService.get_test_type_id(tst_name)
               test_status = tst_value[tst_value.keys[tst_value.keys.count - 1]]['status']
-              test_status_id = OrderService.get_status_id(test_status)
+              test_status = "Completed" if test_status == "Drawn" && !test_results.blank?
+	      test_status_id = OrderService.get_status_id(test_status)
               updated_by_id = tst_value[tst_value.keys[tst_value.keys.count - 1]]['updated_by']['id']
               updated_by_first_name = tst_value[tst_value.keys[tst_value.keys.count - 1]]['updated_by']['first_name']
               updated_by_last_name = tst_value[tst_value.keys[tst_value.keys.count - 1]]['updated_by']['last_name']
@@ -796,7 +814,7 @@ puts tst_name
 		end
               end
              
-              test_results = document['test_results'][tst_name]
+             # test_results = document['test_results'][tst_name]
               unless test_results.blank?
                 if test_results['results'].keys.count > 0               
                   test_results['results'].keys.each do |ms|                  
@@ -809,7 +827,7 @@ puts tst_name
                               test_id: tst_obj.id,
                               result: rst['result_value'],	
                               device_name: '',						
-                              time_entered: rst['date_result_entered'] || test_results['date_result_entered'] || date_created
+                              time_entered: rst['date_result_entered'] || test_results['date_result_entered']
                         )  
                     else
                       TestResult.create(
@@ -817,7 +835,7 @@ puts tst_name
                               test_id: tst_obj.id,
                               result: rst['result_value'],	
                               device_name: '',						
-                              time_entered: rst['date_result_entered'] || test_results['date_result_entered'] || date_created
+                              time_entered: rst['date_result_entered'] || test_results['date_result_entered']
                         )                     
                     end
                   end

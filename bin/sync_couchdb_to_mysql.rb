@@ -20,13 +20,22 @@
   docs = res['results']
   
   docs.each do |document|
-    puts "-------------------------"       
-      
     tracking_number = document['doc']['tracking_number']
-    puts tracking_number    
-ss = OrderService.check_order(tracking_number)
-  
+   # puts tracking_number
+    document['doc']['order_location'] = "Queens Elizabeth Central Hospital" if document['doc']['order_location'] == "Queen Elizabeth Central Hospital"
+   
+    #next if tracking_number.include?("XLLH")
     next if !document['deleted'].blank?
+    next if document['doc']['tracking_number'][1..3] == "KCH" 
+    next if document['doc']['tracking_number'][1..3] == "MCH" 
+    next if document['doc']['tracking_number'][1..3] == "QCH" 
+    next if document['doc']['tracking_number'][1..3] == "ZCH" 
+    next if document['doc']['tracking_number'][1..3] == "MZD" 
+    next if document['doc']['tracking_number'][1..3] == "TDH"
+    next if document['doc']['tracking_number'][1..3] == "NDH"
+    next if document['doc']['tracking_number'][1..4] == "CHSU"
+    puts tracking_number
+
     couch_id =  document['doc']['_id']
     if OrderService.check_order(tracking_number) == true                 
         if OrderService.check_data_anomalies(document) == true    
