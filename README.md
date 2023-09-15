@@ -62,7 +62,7 @@ If you already have NLIMS DATA SYNCHRONISER running, check the following if they
 1. Access the application on the browser and navigate to ```New site``` button and add ```NLIMS CHSU``` configuration as below: ![New Site](public/new%20site.png)
 2. Add ```Local site``` so that its able to communicate with NLIMS CHSU via the ```Add Site``` button, The local site name should be the same as that in the ```application.yml``` of the config folder. Should the site name not appear on the list of site when ```add site``` button is pressed, Add the site via ```new site``` button and come back to ```add site``` section and search through the list to find the created site: ![Add site](public/add_sitee.png)
 3. Add  NLIMS CHSU so that its able to communicate with local site via the ```Add Site``` button: ![Add site](public/add_site_chsu.png)
-4. Add the 2 site should result in this communication:![Status](public/status.png)
+4. Add the 2 site should result in this communication:  ![Status](public/status.png)
 5. If you made a mistake you can edit these via ```Edit site``` section. In this section you can disable and enable the sites for syncing.
 
 ## Cronjob for periodic syncing between local and chsu
