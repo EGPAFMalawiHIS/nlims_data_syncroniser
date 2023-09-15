@@ -55,7 +55,7 @@ If you are installing the app for the first time, follow these steps:
 If you already have NLIMS DATA SYNCHRONISER running, check the following if they are ok:
 
 1. ```couchdb.yml``` config file is the same as that of ```nlims_controller```
-2. If you access it via the browser(usually runs on port 3008): the interface has CHSU and the local site the last seen status as ```online```
+2. If you can access it via the browser(usually runs on port 3008) and the interface has CHSU and the local site the last seen status as ```online```
 3. Make sure the the local site name displayed is the same as that written to ```application.yml``` config file otherwise rename the name in the file to that being displayed on the interface.
 
 ## Setting up NLIMS DATA SYNCHRONISER to Communicate with CHSU NLIMS
@@ -69,3 +69,5 @@ If you already have NLIMS DATA SYNCHRONISER running, check the following if they
 ```bash
 0 * * * * /bin/bash -l -c 'cd /var/www/nlims_data_syncroniser/ && rvm use 2.5.3 && RAILS_ENV=development bundle exec rake nlims:sync_from_couchdb_to_couchdb --silent >> log/sync_couchdb_to_couchdb.log 2>&1'
 ```
+
+**NOTE: Should the status of chsu be offline-check if you can ping chsu server, if local site is offline - check if the name of the site is the same as that in application.yml. Add only 2 sites(one chsu and the other local site) and disable others.**
