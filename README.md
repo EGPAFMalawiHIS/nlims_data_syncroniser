@@ -16,6 +16,7 @@ Install by following this guide: [Couchdb installation](https://github.com/HISMa
 
 1. Checkout to the ```master``` branch
    ```bash
+   git clone https://github.com/HISMalawi/nlims_data_syncroniser.git
    git checkout master
    ```
 2. Open the respective configuration files in the `config` folder: Copy the .example file to respective .yml file e.g  
