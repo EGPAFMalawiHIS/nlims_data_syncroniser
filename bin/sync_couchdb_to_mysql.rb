@@ -15,6 +15,11 @@
   ip = config['host']
   port = config['port']
   protocol = config['protocol']
+ 
+if !File.exists?("#{Rails.root}/log/couch_mysql_sync.lock")
+
+  FileUtils.touch "#{Rails.root}/log/couch_mysql_sync.lock"
+
   seq = File.read("#{Rails.root}/tmp/couch_seq_number")
   res = JSON.parse(RestClient.get("#{protocol}://#{username}:#{password}@#{ip}:#{port}/#{db_name}/_changes?include_docs=true&limit=3000&since=#{seq}"))
   docs = res['results']
@@ -38,15 +43,25 @@
 
     couch_id =  document['doc']['_id']
     if OrderService.check_order(tracking_number) == true                 
-        if OrderService.check_data_anomalies(document) == true    
-           OrderService.update_order(document,tracking_number)
-        end
+        #if OrderService.check_data_anomalies(document) == true    
+        #   OrderService.update_order(document,tracking_number)
+        #end
+	puts "arleady in, sorry"
     else                
-        if OrderService.check_data_anomalies(document) == true
-  	    OrderService.create_order(document,tracking_number,couch_id)
-	end         
+        #if OrderService.check_data_anomalies(document) == true
+  	   puts "checking am in------------"
+	   puts document
+	   puts document['art_start_date']
+           puts "-----============" 
+	   OrderService.create_order(document,tracking_number,couch_id)
+	#end         
     end
      File.open("#{Rails.root}/tmp/couch_seq_number",'w'){ |f|
       f.write(document['seq'])
      } 
-  end
+ end
+	File.delete("#{Rails.root}/log/couch_mysql_sync.lock")
+
+else
+  puts "another syncing job running currently--------------"
+end

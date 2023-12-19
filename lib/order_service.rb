@@ -412,6 +412,9 @@ module  OrderService
     end
 
     def self.check_data_anomalies(doc)
+      puts '----data ano----'
+      puts doc
+      puts '---da done---'
       specimen_type = doc['doc']['sample_type']
       tests = doc['doc']['tests']
       status = true
@@ -450,20 +453,21 @@ module  OrderService
     end
 
     def self.create_order(document,tracking_number,couch_id)
-     
-            document = document['doc']            
+	return [false,'not an order'] if document['doc']['error'] == "not_found";
+            documentx = document
+            document = document['doc']        
             patient_id = document['patient']['id']
             patient_f_name = document['patient']['first_name']
             patient_l_name = document['patient']['last_name']
             patient_gender = document['patient']['gender']
             patient_email = document['patient']['email']
             patient_phone = document['patient']['phone_number']
-
+            patient_dob = document['patient']['dob']
             ward = document['order_location']
             district  = document['district']
-        puts document['date_created']
-puts "checking -date"    
-	date_created = document['date_created'].to_date.strftime("%Y%m%d%H%m") if !document['date_created'].blank? && document['date_created'] != "0000-00-00 00:00:00"
+        puts "Created date #{document['date_created']}"
+#puts "checking -date"    
+	date_created = document['date_created'] if !document['date_created'].blank? #& document['date_created'] != "0000-00-00 00:00:00"
             #raise date_created.inspect
 date_created = Time.now() if document['date_created'] == "0000-00-00 00:00:00"
 		priority = document['priority']
@@ -481,18 +485,25 @@ date_created = Time.now() if document['date_created'] == "0000-00-00 00:00:00"
             who_order_l_name = document['who_order_test']['last_name'] rescue ""
             who_order_phone_number = document['who_order_test']['phone_number'] rescue ""
             
-
+            begin
             ward_id = OrderService.get_ward_id(ward)
             sample_type_id = OrderService.get_specimen_type_id(sample_type)
             sample_status_id = OrderService.get_specimen_status_id(sample_status)
-            art_start_date = Time.now()
+           #art_start_date = Time.now()
 	   arv_number = ""
            art_regimen = ""
 
 	   art_regimen = document['art_regimen'] if !document['art_regimen'].blank?
 	   arv_number = document['arv_number'] if !document['art_regimen'].blank?
            art_start_date  = document['art_start_date'] if !document['art_start_date'].blank?
-          sp = Speciman.create(
+        
+	#puts "art start date" 
+       # puts document['art_start_date']
+	#puts document
+        pat_date = document['art_start_date']
+	#raise art_start_date.inspect if document['sending_facility'] != "St Lukes Hospital"
+        ActiveRecord::Base.transaction do 
+	sp = Speciman.create(
                   :tracking_number => tracking_number,
                   :specimen_type_id =>  sample_type_id,
                   :specimen_status_id =>  sample_status_id,
@@ -502,7 +513,7 @@ date_created = Time.now() if document['date_created'] == "0000-00-00 00:00:00"
                   :drawn_by_name =>  who_order_f_name + " " + who_order_l_name,
                   :drawn_by_phone_number => who_order_phone_number,
                   :target_lab => receiving_facility,
-                  :art_start_date => art_start_date,
+                  :art_start_date => pat_date,
                   :sending_facility => sending_facility,
                   :requested_by => "",
                   :ward_id => 1,
@@ -512,6 +523,7 @@ date_created = Time.now() if document['date_created'] == "0000-00-00 00:00:00"
                   :arv_number => arv_number
             )
      
+#raise art_start_date.inspect
             tests = document['test_statuses']
             patient_obj = Patient.where(:patient_number => patient_id)                
             patient_obj = patient_obj.first unless patient_obj.blank?
@@ -520,13 +532,16 @@ date_created = Time.now() if document['date_created'] == "0000-00-00 00:00:00"
                                           patient_number: patient_id,
                                           name:  patient_f_name  +" "+  patient_l_name,
                                           email:  patient_email,
-                                          dob: Time.new.strftime("%Y%m%d%H%M%S"),
+                                          dob: patient_dob,
                                           gender: patient_gender,
                                           phone_number: patient_phone,
                                           address: "",
                                           external_patient_number:  "" 
 
-                                          )                           
+                                          )
+		  else
+                       patient_obj.dob = patient_dob
+                       patient_obj.save                           
                   end
             p_id = patient_obj.id
             tests.each do |tst_name,tst_value|    
@@ -536,7 +551,8 @@ date_created = Time.now() if document['date_created'] == "0000-00-00 00:00:00"
 	      tst_name = "Cryptococcus Antigen Test" if tst_name == "Cryptococcal Antigen"
               tst_name = "FBC" if tst_name == "Fbs"
 	      tst_name = "Creatine" if tst_name =="Creat"
-              test_id = OrderService.get_test_type_id(tst_name)
+              tst_name = "Early Infant Diagnosis" if tst_name == "EID"
+	      test_id = OrderService.get_test_type_id(tst_name)
               test_status = tst_value[tst_value.keys[tst_value.keys.count - 1]]['status']
               test_status_id = OrderService.get_status_id(test_status)
               updated_by_id = tst_value[tst_value.keys[tst_value.keys.count - 1]]['updated_by']['id']
@@ -593,6 +609,11 @@ date_created = Time.now() if document['date_created'] == "0000-00-00 00:00:00"
               end                
             end
        puts "---------done------------"
+       end
+       rescue => exception
+         puts exception
+         check_data_anomalies(documentx)
+       end
     end
 
     def self.check_order(tracking_number)
@@ -614,12 +635,8 @@ date_created = Time.now() if document['date_created'] == "0000-00-00 00:00:00"
     end
 
     def self.get_ward_id(ward_name)
-      res  = Ward.find_by_sql("SELECT id AS ward_id FROM wards WHERE name='#{ward_name}'")
-      if !res.blank?
-         return res[0]['ward_id']
-      else
-
-      end       
+      ward_name = ward_name.gsub("'","")
+      Ward.find_or_create_by(name: ward_name).id 
     end
 
 
@@ -661,6 +678,7 @@ date_created = Time.now() if document['date_created'] == "0000-00-00 00:00:00"
 
 
     def self.update_order(document,tracking_number)
+            begin
             puts "migrating v2--------------------------------"
             puts tracking_number
             document = document['doc']            
@@ -674,9 +692,9 @@ date_created = Time.now() if document['date_created'] == "0000-00-00 00:00:00"
             ward = document['order_location']
             district  = document['districy']
             begin
-		date_created = document['date_created'].to_date.strftime("%Y%m%d%H%m") if !document['date_created'].blank?
+		date_created = document['date_created'] if !document['date_created'].blank?
 	    rescue ArgumentError
-		date_created = Time.new.strftime("%Y%m%d%H%M%S")
+		date_created = Time.new
 	    end 
 		 priority = document['priority']
             receiving_facility = document['receiving_facility']
@@ -730,13 +748,16 @@ date_created = Time.now() if document['date_created'] == "0000-00-00 00:00:00"
            
             tests = document['test_statuses']
             #test_results = document['test_results'][tst_name]
-            tests.each do |tst_name,tst_value|  
+           
+
+	    tests.each do |tst_name,tst_value|  
               test_results = document['test_results'][tst_name]
 	      tst_name = "Cross-match" if tst_name == "Cross Match"            
               tst_name = "ABO Blood Grouping" if tst_name == "Abo Blood Grouping"
-	      test_id = OrderService.get_test_type_id(tst_name)
+	      tst_name = "Early Infant Diagnosis" if tst_name == "EID"
+		test_id = OrderService.get_test_type_id(tst_name)
               test_status = tst_value[tst_value.keys[tst_value.keys.count - 1]]['status']
-              test_status = "Completed" if test_status == "Drawn" && !test_results.blank?
+              #test_status = "Completed" if test_status == "Drawn" && !test_results.blank?
 	      test_status_id = OrderService.get_status_id(test_status)
               updated_by_id = tst_value[tst_value.keys[tst_value.keys.count - 1]]['updated_by']['id']
               updated_by_first_name = tst_value[tst_value.keys[tst_value.keys.count - 1]]['updated_by']['first_name']
@@ -764,6 +785,40 @@ date_created = Time.now() if document['date_created'] == "0000-00-00 00:00:00"
                       :time_created => date_created,
                       :test_status_id => test_status_id 
               )
+
+	         if !document['results_acknowledgement'].blank?
+
+			document['results_acknowledgement'].each do |t_name,t_values|
+				 fnd_id = OrderService.get_test_type_id(tst_name)					
+			  if fnd_id == test_id
+				#raise "yes am in".inspect
+				rst_type = TestResultRecepientType.find_by(:name => document['results_acknowledgement'][t_name]['result_recepient_type'])
+		                 rst_given = document['results_acknowledgement'][t_name]['result_given']
+                		if rst_given == "true"
+                        		rst_given = 1
+                		else
+                        		rst_given = 0
+                		end 
+             		Test.where(:specimen_id => sp.id, :test_type_id => test_id).update_all(
+                     			 :specimen_id => sp.id,
+                      			:test_type_id => test_id,
+                      			:patient_id => p_id,
+                      			:created_by => who_order_f_name + " " + who_order_l_name,
+                      			:panel_id => '',
+                      			:time_created => date_created,
+                      			:test_status_id => test_status_id,
+                      			:test_result_receipent_types => rst_type['id'],
+                      			:result_given => rst_given,
+                      			:date_result_given => document['results_acknowledgement'][t_name]['date_result_give;'].to_time
+                  		)
+
+
+			   end
+
+			end
+			
+              end
+
              
               count = tst_value.keys.count
 puts tst_name
@@ -842,6 +897,9 @@ puts tst_name
                 end   
               end                
             end
-    end
+	rescue => exception
+      		puts exception
+ 	 end   
+ end
 
 end

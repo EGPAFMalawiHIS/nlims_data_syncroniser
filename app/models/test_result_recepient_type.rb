@@ -1,0 +1,2 @@
+class TestResultRecepientType < ApplicationRecord
+end
