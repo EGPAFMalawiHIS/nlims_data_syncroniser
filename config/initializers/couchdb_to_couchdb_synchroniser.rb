@@ -1,3 +1,5 @@
-require "syncing.rb"
+# frozen_string_literal: true
 
-#Sync.perform_in(0)
+require 'syncing'
+
+CouchSync.perform_in(0)
