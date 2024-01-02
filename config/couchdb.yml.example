@@ -1,0 +1,22 @@
+development: &development
+  protocol: 'http'
+  host: 127.0.0.1
+  port: 5984
+  prefix: nlims
+  suffix: repo_
+  username: admin
+  password: password
+
+chsu_couch_db:
+  ip: 123.0.0.1
+  port: 5984
+  username: admin
+  password: root
+
+test:
+  <<: *development
+  suffix: test
+
+production:
+  <<: *development
+  protocol: 'http'
