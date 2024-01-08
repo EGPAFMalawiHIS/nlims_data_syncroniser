@@ -1,11 +1,17 @@
 development: &development
   protocol: 'http'
-  host: localhost
+  host: 127.0.0.1
   port: 5984
   prefix: nlims
-  suffix: repo
+  suffix: repo_
   username: admin
-  password: admin
+  password: password
+
+chsu_couch_db:
+  ip: 123.0.0.1
+  port: 5984
+  username: admin
+  password: root
 
 test:
   <<: *development

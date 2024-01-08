@@ -1,4 +1,5 @@
-require "couchdb_to_mysql_synchroniser.rb"
+# frozen_string_literal: true
 
-CouchdbMysqlSynchroniser.perform_in(0) 
+require 'couchdb_to_mysql_synchroniser'
 
+CouchdbMysqlSynchroniser.perform_in(5)
