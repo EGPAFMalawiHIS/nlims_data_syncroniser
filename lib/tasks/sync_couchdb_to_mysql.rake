@@ -27,17 +27,16 @@ namespace :nlims do
 
       docs.each do |document|
         puts 'Run in Cron Job'
-	puts document
         tracking_number = document['doc']['tracking_number']
-        next unless document['deleted'].blank?
-
-        couch_id = document['doc']['_id']
-        if OrderService.check_order(tracking_number) == true
-          OrderService.update_order(document, tracking_number)
-          puts "updated order #{tracking_number}"
-        else
-          OrderService.create_order(document, tracking_number, couch_id)
-          puts "created order #{tracking_number}"
+        if document['deleted'].blank?
+          couch_id = document['doc']['_id']
+       	  if OrderService.check_order(tracking_number) == true
+            OrderService.update_order(document, tracking_number)
+            puts "updated order #{tracking_number}"
+          else
+            OrderService.create_order(document, tracking_number, couch_id)
+            puts "created order #{tracking_number}"
+          end
         end
         File.open("#{Rails.root}/tmp/couch_seq_number", 'w') do |f|
           f.write(document['seq'])

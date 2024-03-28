@@ -690,7 +690,8 @@ date_created = Time.now() if document['date_created'] == "0000-00-00 00:00:00"
             patient_phone = document['patient']['phone_number']
 
             ward = document['order_location']
-            district  = document['districy']
+            district = document['districy']
+            district ||= document['district']
             begin
 		date_created = document['date_created'] if !document['date_created'].blank?
 	    rescue ArgumentError
