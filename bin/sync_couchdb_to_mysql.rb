@@ -16,14 +16,14 @@
   port = config['port']
   protocol = config['protocol']
  
-if !File.exists?("#{Rails.root}/log/couch_mysql_sync.lock")
+if !File.exists?("/tmp/couch_mysql_sync.lock")
 
-  FileUtils.touch "#{Rails.root}/log/couch_mysql_sync.lock"
+  FileUtils.touch "/tmp/couch_mysql_sync.lock"
 
   seq = File.read("#{Rails.root}/tmp/couch_seq_number")
   res = JSON.parse(RestClient.get("#{protocol}://#{username}:#{password}@#{ip}:#{port}/#{db_name}/_changes?include_docs=true&limit=3000&since=#{seq}"))
   docs = res['results']
-  
+ begin 
   docs.each do |document|
     tracking_number = document['doc']['tracking_number']
    # puts tracking_number
@@ -60,8 +60,11 @@ if !File.exists?("#{Rails.root}/log/couch_mysql_sync.lock")
       f.write(document['seq'])
      } 
  end
-	File.delete("#{Rails.root}/log/couch_mysql_sync.lock")
-
+ rescue => e
+   puts "Encountered and error: #{e.message}"
+ ensure
+  FileUtils.rm("/tmp/couch_mysql_sync.lock")
+ end
 else
   puts "another syncing job running currently--------------"
 end
